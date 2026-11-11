@@ -1,869 +1,797 @@
-
 "use client";
 
 import { useState } from "react";
 
-const videos = [
+type Video = {
+  id: number;
+  title: string;
+  image: string;
+  duration: string;
+  size: string;
+};
+
+const initialVideos: Video[] = [
   {
-    title: "ทริปเที่ยวญี่ปุ่น",
-    time: "00:30",
-    image:
-      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600",
+    id: 1,
+    title: "ทริปท่องเที่ยว",
+    image: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=700",
+    duration: "00:30",
+    size: "12 MB",
   },
   {
-    title: "ดอกไม้สวยงาม",
-    time: "00:15",
-    image:
-      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600",
+    id: 2,
+    title: "ดอกไม้สวยๆ",
+    image: "https://images.unsplash.com/photo-1494972308805-463bc619d34e?w=700",
+    duration: "00:15",
+    size: "25 MB",
   },
   {
-    title: "เมืองยามค่ำคืน",
-    time: "00:45",
-    image:
-      "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600",
+    id: 3,
+    title: "วิวเมือง",
+    image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=700",
+    duration: "00:45",
+    size: "18 MB",
   },
   {
-    title: "น้องแมวน่ารัก",
-    time: "00:20",
-    image:
-      "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=600",
+    id: 4,
+    title: "น้องแมว",
+    image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=700",
+    duration: "00:20",
+    size: "10 MB",
   },
+];
+
+const tools = [
+  { icon: "✂️", name: "ตัดต่อ" },
+  { icon: "◷", name: "ความเร็ว" },
+  { icon: "✨", name: "เอฟเฟกต์" },
+  { icon: "T", name: "ข้อความ" },
+  { icon: "♫", name: "เสียงเพลง" },
+  { icon: "◉", name: "ฟิลเตอร์" },
 ];
 
 export default function Home() {
   const [page, setPage] = useState("home");
-  const [resolution, setResolution] = useState("1080P");
+  const [videos, setVideos] = useState(initialVideos);
+  const [selected, setSelected] = useState<Video>(initialVideos[0]);
+  const [quality, setQuality] = useState("1080P");
   const [fps, setFps] = useState("30");
   const [format, setFormat] = useState("MP4");
   const [playing, setPlaying] = useState(false);
-  const [music, setMusic] = useState(true);
   const [activeTool, setActiveTool] = useState("ตัดต่อ");
-  const [videoName, setVideoName] = useState("โปรเจกต์ของฉัน");
+  const [notice, setNotice] = useState("");
 
-  const tools = [
-    { icon: "✂️", name: "ตัดต่อ" },
-    { icon: "◉", name: "ความเร็ว" },
-    { icon: "✨", name: "เอฟเฟกต์" },
-    { icon: "T", name: "ข้อความ" },
-    { icon: "♫", name: "เสียงเพลง" },
-    { icon: "◐", name: "ฟิลเตอร์" },
-  ];
-
-  const goEdit = () => {
+  const openEditor = (video: Video) => {
+    setSelected(video);
     setPage("editor");
+    setPlaying(false);
   };
 
   const exportVideo = () => {
-    alert(
-      `ส่งออกวิดีโอสำเร็จ!\nความละเอียด: ${resolution}\nFPS: ${fps}\nรูปแบบ: ${format}`
-    );
-    setPage("library");
+    setNotice(`ส่งออกวิดีโอ ${selected.title} สำเร็จ! (${quality}, ${fps} FPS, ${format})`);
+    setVideos((old) => old.some((v) => v.id === selected.id) ? old : [selected, ...old]);
   };
 
+  const nav = [
+    { id: "home", icon: "⌂", label: "หน้าแรก" },
+    { id: "editor", icon: "▣", label: "โปรเจกต์" },
+    { id: "export", icon: "♛", label: "พรีเมียม" },
+    { id: "library", icon: "♟", label: "โปรไฟล์" },
+  ];
+
   return (
-    <main className="app">
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
-
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          font-family: 'Kanit', sans-serif;
-          background: #fce2f1;
-          color: white;
-        }
-
-        button {
-          font-family: inherit;
-          cursor: pointer;
-        }
-
-        .app {
-          min-height: 100vh;
-          padding: 35px 20px;
-          background:
-            radial-gradient(ellipse at 10% 20%, #ffc0df 0%, transparent 40%),
-            radial-gradient(ellipse at 90% 80%, #ffb8dd 0%, transparent 40%),
-            linear-gradient(135deg, #ffe8f5, #f9d5ec);
-        }
-
-        .heading {
-          text-align: center;
-          color: #30202e;
-          margin-bottom: 30px;
-        }
-
-        .heading h1 {
-          font-size: 34px;
-          margin: 0;
-          font-weight: 700;
-        }
-
-        .heading p {
-          margin: 5px 0;
-          color: #79536d;
-          font-size: 14px;
-        }
-
-        .screens {
-          display: grid;
-          grid-template-columns: repeat(2, 340px);
-          justify-content: center;
-          gap: 28px;
-        }
-
-        .phone {
-          width: 340px;
-          min-height: 620px;
-          border-radius: 34px;
-          background: #111014;
-          border: 5px solid #28232b;
-          outline: 2px solid #f48cbe;
-          box-shadow: 0 15px 35px #8f52704d;
-          overflow: hidden;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .status {
-          height: 28px;
-          padding: 5px 19px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 11px;
-          color: white;
-        }
-
-        .notch {
-          position: absolute;
-          top: 5px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #000;
-          width: 82px;
-          height: 20px;
-          border-radius: 20px;
-        }
-
-        .screen-content {
-          padding: 10px 14px;
-          flex: 1;
-          overflow-y: auto;
-          scrollbar-width: none;
-        }
-
-        .screen-content::-webkit-scrollbar {
-          display: none;
-        }
-
-        .topbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 15px;
-        }
-
-        .logo {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 23px;
-          font-weight: 600;
-        }
-
-        .logo-icon {
-          color: #ff69b1;
-          font-size: 27px;
-        }
-
-        .pink {
-          background: linear-gradient(100deg, #ff91c9, #f52d91);
-          color: white;
-          border: none;
-          border-radius: 30px;
-          font-weight: 500;
-        }
-
-        .create-btn {
-          width: 100%;
-          padding: 13px;
-          font-size: 15px;
-          margin: 12px 0 18px;
-        }
-
-        .section-title {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-          font-weight: 500;
-          margin: 15px 0 9px;
-        }
-
-        .section-title small {
-          color: #b3a6b2;
-          font-size: 10px;
-        }
-
-        .hero {
-          height: 120px;
-          border-radius: 14px;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .hero img, .preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .play {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 42px;
-          height: 42px;
-          border-radius: 50%;
-          border: none;
-          background: #ffffffbd;
-          color: #171219;
-          font-size: 20px;
-        }
-
-        .tool-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 7px;
-        }
-
-        .tool {
-          background: #26232b;
-          border: 1px solid #39333e;
-          border-radius: 10px;
-          min-height: 75px;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          gap: 5px;
-          font-size: 11px;
-        }
-
-        .tool span {
-          color: #ff82bd;
-          font-size: 23px;
-        }
-
-        .tool.active {
-          background: #54243e;
-          border-color: #ff76b6;
-        }
-
-        .thumbnail-row {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
-        }
-
-        .thumbnail {
-          height: 105px;
-          border-radius: 9px;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .thumbnail img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .thumbnail span {
-          position: absolute;
-          bottom: 5px;
-          left: 5px;
-          font-size: 11px;
-          text-shadow: 0 1px 4px black;
-        }
-
-        .bottom-nav {
-          height: 58px;
-          background: #17151a;
-          border-top: 1px solid #29252d;
-          display: flex;
-          justify-content: space-around;
-          align-items: center;
-          flex-shrink: 0;
-        }
-
-        .nav-item {
-          color: #a69ba9;
-          border: none;
-          background: transparent;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
-          font-size: 10px;
-        }
-
-        .nav-item b {
-          font-size: 20px;
-        }
-
-        .nav-item.active {
-          color: #ff72b6;
-        }
-
-        .preview {
-          width: 100%;
-          height: 210px;
-          border-radius: 12px;
-          overflow: hidden;
-          position: relative;
-          margin-bottom: 10px;
-        }
-
-        .editor-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 12px;
-          color: #c4b8c3;
-          padding: 7px 0;
-        }
-
-        .timeline {
-          background: #1d1a21;
-          border-radius: 10px;
-          padding: 10px;
-          margin: 12px 0;
-        }
-
-        .time-label {
-          display: flex;
-          justify-content: space-between;
-          font-size: 10px;
-          color: #aaa;
-          margin-bottom: 8px;
-        }
-
-        .track {
-          height: 52px;
-          display: flex;
-          overflow: hidden;
-          border-radius: 6px;
-          margin-bottom: 8px;
-          border: 1px solid #655063;
-        }
-
-        .track img {
-          width: 25%;
-          object-fit: cover;
-        }
-
-        .track img:nth-child(2) {
-          width: 25%;
-        }
-
-        .track img:nth-child(3) {
-          width: 25%;
-        }
-
-        .track img:nth-child(4) {
-          width: 25%;
-        }
-
-        .music-track {
-          height: 38px;
-          border-radius: 6px;
-          background: #42204d;
-          color: #e4b0ff;
-          padding: 8px;
-          font-size: 12px;
-        }
-
-        .music-wave {
-          color: #d77bff;
-          letter-spacing: 2px;
-          margin-left: 8px;
-        }
-
-        .editor-tool-grid {
-          display: grid;
-          grid-template-columns: repeat(6, 1fr);
-          gap: 3px;
-          margin-top: auto;
-          padding: 12px 0;
-        }
-
-        .editor-tool {
-          background: transparent;
-          border: none;
-          color: #ddd;
-          font-size: 10px;
-          padding: 5px 0;
-        }
-
-        .editor-tool div {
-          font-size: 20px;
-          margin-bottom: 4px;
-        }
-
-        .editor-tool.active {
-          color: #ff75b9;
-        }
-
-        .back {
-          background: transparent;
-          border: none;
-          color: white;
-          font-size: 20px;
-        }
-
-        .setting-label {
-          font-size: 13px;
-          margin: 15px 0 8px;
-        }
-
-        .option-row {
-          display: flex;
-          gap: 8px;
-        }
-
-        .option {
-          flex: 1;
-          padding: 10px 5px;
-          background: #29252e;
-          border: 1px solid transparent;
-          color: white;
-          border-radius: 7px;
-          font-size: 12px;
-        }
-
-        .option.selected {
-          background: #f34c9c;
-          border-color: #ffb0d8;
-        }
-
-        .export-btn {
-          width: 100%;
-          padding: 13px;
-          margin-top: 20px;
-        }
-
-        .library-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
-        .video-card {
-          min-width: 0;
-        }
-
-        .video-card .thumbnail {
-          height: 130px;
-        }
-
-        .video-card p {
-          font-size: 12px;
-          margin: 5px 0 0;
-        }
-
-        .video-card small {
-          color: #aaa;
-          font-size: 10px;
-        }
-
-        .phone-title {
-          font-size: 19px;
-          font-weight: 600;
-          margin: 5px 0 15px;
-        }
-
-        .text-muted {
-          color: #aaa;
-          font-size: 11px;
-        }
-
-        .full-input {
-          width: 100%;
-          padding: 12px;
-          background: #27232b;
-          color: white;
-          border: 1px solid #514451;
-          border-radius: 9px;
-          margin: 8px 0;
-          outline: none;
-          font-family: inherit;
-        }
-
-        @media(max-width: 750px) {
-          .screens {
-            grid-template-columns: 1fr;
-            justify-items: center;
-          }
-
-          .heading h1 {
-            font-size: 27px;
-          }
-        }
-
-        @media(max-width: 380px) {
-          .phone {
-            width: 100%;
-          }
-
-          .app {
-            padding: 20px 10px;
-          }
-        }
-      `}</style>
-
-      <header className="heading">
-        <h1>💗 VideoEdit</h1>
-        <p>แอปพลิเคชันตัดต่อวิดีโอ Prototype</p>
-      </header>
-
-      <div className="screens">
-
-        {/* SCREEN 1 : HOME */}
-        <section className="phone">
-          <div className="status">
-            <b>9:41</b>
-            <span>●●● ▰ ▰</span>
-          </div>
-          <div className="notch" />
-
-          <div className="screen-content">
-            <div className="topbar">
-              <div className="logo">
-                <span className="logo-icon">▶</span>
-                VideoEdit
+    <main className="app-bg">
+      <div className="phone">
+
+        {/* STATUS BAR */}
+        <div className="status">
+          <span>9:41</span>
+          <span className="island" />
+          <span>▮ ▴ ▰</span>
+        </div>
+
+        {/* HOME PAGE */}
+        {page === "home" && (
+          <div className="screen">
+            <header className="header">
+              <div className="brand">
+                <span className="logo">▶</span>
+                <span>VideoEdit</span>
               </div>
-              <button className="back" onClick={() => alert("ตั้งค่า")}>
-                ⚙
-              </button>
+              <button className="icon-button" onClick={() => setNotice("ตั้งค่าการใช้งาน")}>⚙</button>
+            </header>
+
+            <p className="subtitle">ตัดต่อวิดีโอ...ได้ง่ายๆ ในมือคุณ ♡</p>
+
+            <div className="hero" style={{ backgroundImage: `url(${selected.image})` }}>
+              <button className="play" onClick={() => openEditor(selected)}>▶</button>
+              <div className="hero-caption">Create your story ✨</div>
             </div>
 
-            <p className="text-muted">
-              ตัดต่อวิดีโอ...ได้ง่ายๆ ในมือถือ ♡
-            </p>
-
-            <div className="hero">
-              <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600" alt="Camera" />
-              <button className="play" onClick={() => setPlaying(!playing)}>
-                {playing ? "Ⅱ" : "▶"}
-              </button>
-            </div>
-
-            <button className="pink create-btn" onClick={goEdit}>
+            <button className="pink-button" onClick={() => openEditor(selected)}>
               ＋ เริ่มสร้างวิดีโอ
             </button>
 
-            <div className="section-title">
-              เครื่องมือตัดต่อยอดนิยม
-              <small>ดูทั้งหมด ›</small>
-            </div>
+            <SectionTitle title="เครื่องมือตัดต่อยอดนิยม" action="ดูทั้งหมด" />
 
             <div className="tool-grid">
-              {[
-                ["🎬", "ตัดต่อวิดีโอ"],
-                ["♫", "ตัดเสียง"],
-                ["⭐", "เอฟเฟกต์"],
-                ["T", "ข้อความ"],
-              ].map(([icon, name]) => (
+              {tools.slice(0, 4).map((tool) => (
                 <button
-                  className="tool"
-                  key={name}
+                  key={tool.name}
+                  className="tool-card"
                   onClick={() => {
-                    setActiveTool(name);
-                    goEdit();
+                    setActiveTool(tool.name);
+                    openEditor(selected);
                   }}
                 >
-                  <span>{icon}</span>
-                  {name}
+                  <span>{tool.icon}</span>
+                  <small>{tool.name}</small>
                 </button>
               ))}
             </div>
 
-            <div className="section-title">
-              เทมเพลตแนะนำ
-              <small>ดูทั้งหมด ›</small>
-            </div>
+            <SectionTitle title="เทมเพลตแนะนำ" action="ดูทั้งหมด" />
 
-            <div className="thumbnail-row">
-              {videos.slice(0, 3).map((v) => (
-                <div className="thumbnail" key={v.title}>
-                  <img src={v.image} alt={v.title} />
-                  <span>{v.title}</span>
-                </div>
+            <div className="template-grid">
+              {videos.slice(0, 3).map((video) => (
+                <button
+                  className="template"
+                  key={video.id}
+                  onClick={() => openEditor(video)}
+                >
+                  <img src={video.image} alt={video.title} />
+                  <span>{video.title}</span>
+                </button>
               ))}
             </div>
+
+            <div className="tip">
+              <span>💗</span>
+              <div>
+                <b>สร้างวิดีโอในแบบของคุณ</b>
+                <small>เพิ่มสีสันให้ทุกช่วงเวลาพิเศษ</small>
+              </div>
+            </div>
           </div>
+        )}
 
-          <nav className="bottom-nav">
-            <button className="nav-item active" onClick={() => setPage("home")}>
-              <b>⌂</b>หน้าหลัก
-            </button>
-            <button className="nav-item" onClick={goEdit}>
-              <b>▣</b>โปรเจกต์
-            </button>
-            <button className="nav-item" onClick={() => setPage("export")}>
-              <b>♛</b>พรีเมียม
-            </button>
-            <button className="nav-item" onClick={() => alert("โปรไฟล์")}>
-              <b>♙</b>โปรไฟล์
-            </button>
-          </nav>
-        </section>
-
-        {/* SCREEN 2 : EDITOR */}
-        <section className="phone">
-          <div className="status">
-            <b>9:41</b>
-            <span>●●● ▰ ▰</span>
-          </div>
-          <div className="notch" />
-
-          <div className="screen-content">
-            <div className="topbar">
-              <button className="back" onClick={() => setPage("home")}>
-                ×
+        {/* EDITOR PAGE */}
+        {page === "editor" && (
+          <div className="screen">
+            <header className="editor-header">
+              <button className="icon-button" onClick={() => setPage("home")}>✕</button>
+              <button className="quality-tag" onClick={() => setPage("export")}>
+                {quality}⌄
               </button>
-              <button className="option" style={{ flex: "none" }}>
-                1080P ⌄
-              </button>
-              <button className="pink" style={{ padding: "8px 15px" }} onClick={() => setPage("export")}>
+              <button className="export-small" onClick={() => setPage("export")}>
                 ↑ ส่งออก
               </button>
-            </div>
+            </header>
 
-            <div className="preview">
-              <img
-                src={videos[0].image}
-                alt="Video preview"
-              />
+            <div className="video-preview">
+              <img src={selected.image} alt={selected.title} />
               <button className="play" onClick={() => setPlaying(!playing)}>
                 {playing ? "Ⅱ" : "▶"}
               </button>
             </div>
 
-            <div className="editor-actions">
-              <span>{playing ? "00:12" : "00:00"} / 00:30</span>
-              <button className="back" onClick={() => setPlaying(!playing)}>▶</button>
-              <span>↶　↷　⛶</span>
+            <div className="time-row">
+              <span>{playing ? "00:15" : "00:00"} / {selected.duration}</span>
+              <div className="preview-controls">
+                <button onClick={() => setPlaying(!playing)}>▶</button>
+                <button onClick={() => setNotice("ย้อนกลับแล้ว")}>↶</button>
+                <button onClick={() => setNotice("ทำซ้ำแล้ว")}>↷</button>
+                <button onClick={() => setNotice("แสดงตัวอย่างเต็มจอ")}>⛶</button>
+              </div>
             </div>
 
             <div className="timeline">
-              <div className="time-label">
+              <div className="timeline-ruler">
                 <span>00:00</span>
                 <span>00:05</span>
                 <span>00:10</span>
               </div>
-
-              <div className="track">
-                {videos.map((v) => (
-                  <img src={v.image} key={v.title} alt="" />
-                ))}
+              <div className="timeline-track">
+                <div className="track-icon">🔊</div>
+                <div className="track-content">
+                  <img src={selected.image} alt="" />
+                  <img src={selected.image} alt="" />
+                  <img src={selected.image} alt="" />
+                </div>
+                <div className="playhead" />
               </div>
-
-              <button
-                className="music-track"
-                style={{ width: "100%", textAlign: "left", border: "none" }}
-                onClick={() => setMusic(!music)}
-              >
-                ♫ {music ? "เพลงประกอบ" : "ปิดเสียงเพลง"}
-                <span className="music-wave">▂▅▃▇▅▂▆▃▅▇</span>
-              </button>
+              <div className="audio-track">
+                <span>♫ เพลงประกอบ</span>
+                <div className="wave">
+                  {Array.from({ length: 35 }).map((_, i) => (
+                    <i key={i} style={{ height: `${8 + ((i * 13) % 25)}px` }} />
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <p className="text-muted">เครื่องมือตัดต่อ</p>
+            <div className="active-tool">
+              กำลังใช้งาน: <b>{activeTool}</b>
+            </div>
 
-            <div className="editor-tool-grid">
+            <div className="editor-tools">
               {tools.map((tool) => (
                 <button
                   key={tool.name}
-                  className={`editor-tool ${activeTool === tool.name ? "active" : ""}`}
-                  onClick={() => setActiveTool(tool.name)}
+                  className={activeTool === tool.name ? "selected-tool" : ""}
+                  onClick={() => {
+                    setActiveTool(tool.name);
+                    setNotice(`เลือกเครื่องมือ ${tool.name} แล้ว`);
+                  }}
                 >
-                  <div>{tool.icon}</div>
-                  {tool.name}
+                  <span>{tool.icon}</span>
+                  <small>{tool.name}</small>
                 </button>
               ))}
             </div>
-
-            <div className="timeline" style={{ marginTop: 0 }}>
-              <b style={{ fontSize: 12 }}>{activeTool}</b>
-              <p className="text-muted">
-                {activeTool === "ตัดต่อ"
-                  ? "เลือกคลิปบน Timeline เพื่อแก้ไข"
-                  : `กำลังเลือกเครื่องมือ${activeTool}`}
-              </p>
-            </div>
           </div>
+        )}
 
-          <nav className="bottom-nav">
-            <button className="nav-item active" onClick={() => setPage("home")}>⌂<small>หน้าหลัก</small></button>
-            <button className="nav-item active" onClick={goEdit}>✂<small>ตัดต่อ</small></button>
-            <button className="nav-item" onClick={() => setPage("export")}>T<small>ข้อความ</small></button>
-            <button className="nav-item" onClick={() => setMusic(!music)}>♫<small>เสียงเพลง</small></button>
-          </nav>
-        </section>
-
-        {/* SCREEN 3 : EXPORT */}
-        <section className="phone">
-          <div className="status">
-            <b>9:41</b>
-            <span>●●● ▰ ▰</span>
-          </div>
-          <div className="notch" />
-
-          <div className="screen-content">
-            <div className="topbar">
-              <button className="back" onClick={() => setPage("editor")}>‹</button>
+        {/* EXPORT PAGE */}
+        {page === "export" && (
+          <div className="screen">
+            <header className="page-header">
+              <button className="icon-button" onClick={() => setPage("editor")}>‹</button>
               <b>ส่งออกวิดีโอ</b>
               <span />
+            </header>
+
+            <div className="export-preview">
+              <img src={selected.image} alt={selected.title} />
+              <span className="play-mini">▶</span>
             </div>
 
-            <div className="preview" style={{ height: 155 }}>
-              <img src={videos[0].image} alt="Export preview" />
-              <button className="play" onClick={() => setPlaying(!playing)}>
-                {playing ? "Ⅱ" : "▶"}
-              </button>
-            </div>
-
-            <p className="setting-label">ความละเอียด</p>
+            <p className="field-label">ความละเอียด</p>
             <div className="option-row">
-              {["480P", "720P", "1080P"].map((r) => (
+              {["480P", "720P", "1080P"].map((item) => (
                 <button
-                  key={r}
-                  onClick={() => setResolution(r)}
-                  className={`option ${resolution === r ? "selected" : ""}`}
+                  key={item}
+                  className={quality === item ? "option active" : "option"}
+                  onClick={() => setQuality(item)}
                 >
-                  {r} {resolution === r ? "✓" : ""}
+                  {item} {quality === item ? "✓" : ""}
                 </button>
               ))}
             </div>
 
-            <p className="setting-label">อัตราเฟรม (FPS)</p>
+            <p className="field-label">อัตราเฟรม (FPS)</p>
             <div className="option-row">
-              {["24", "30", "60"].map((r) => (
+              {["24", "30", "60"].map((item) => (
                 <button
-                  key={r}
-                  onClick={() => setFps(r)}
-                  className={`option ${fps === r ? "selected" : ""}`}
+                  key={item}
+                  className={fps === item ? "option active" : "option"}
+                  onClick={() => setFps(item)}
                 >
-                  {r}
+                  {item} {fps === item ? "✓" : ""}
                 </button>
               ))}
             </div>
 
-            <p className="setting-label">รูปแบบไฟล์</p>
+            <p className="field-label">รูปแบบไฟล์</p>
             <div className="option-row">
-              {["MP4", "MOV"].map((r) => (
+              {["MP4", "MOV"].map((item) => (
                 <button
-                  key={r}
-                  onClick={() => setFormat(r)}
-                  className={`option ${format === r ? "selected" : ""}`}
+                  key={item}
+                  className={format === item ? "option active" : "option"}
+                  onClick={() => setFormat(item)}
                 >
-                  {r} {format === r ? "✓" : ""}
+                  {item} {format === item ? "✓" : ""}
                 </button>
               ))}
             </div>
 
-            <button className="pink export-btn" onClick={exportVideo}>
-              ↓ เริ่มส่งออก
-            </button>
-
-            <p className="text-muted" style={{ textAlign: "center" }}>
-              ♡ วิดีโอของคุณพร้อมแชร์แล้ว
-            </p>
-          </div>
-
-          <nav className="bottom-nav">
-            <button className="nav-item" onClick={() => setPage("home")}>⌂<small>หน้าหลัก</small></button>
-            <button className="nav-item" onClick={goEdit}>▣<small>โปรเจกต์</small></button>
-            <button className="nav-item active" onClick={() => setPage("export")}>♛<small>ส่งออก</small></button>
-            <button className="nav-item" onClick={() => setPage("library")}>♙<small>คลังวิดีโอ</small></button>
-          </nav>
-        </section>
-
-        {/* SCREEN 4 : LIBRARY */}
-        <section className="phone">
-          <div className="status">
-            <b>9:41</b>
-            <span>●●● ▰ ▰</span>
-          </div>
-          <div className="notch" />
-
-          <div className="screen-content">
-            <div className="topbar">
-              <b className="phone-title">โปรเจกต์ของฉัน</b>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button className="back" onClick={() => alert("ค้นหา")}>⌕</button>
-                <button className="back" onClick={() => alert("จัดการโปรเจกต์")}>▤</button>
+            <div className="export-info">
+              <span>📁</span>
+              <div>
+                <b>ตั้งค่าการส่งออก</b>
+                <small>{quality} · {fps} FPS · {format}</small>
               </div>
             </div>
 
-            <input
-              className="full-input"
-              placeholder="ค้นหาโปรเจกต์..."
-              value={videoName}
-              onChange={(e) => setVideoName(e.target.value)}
-            />
+            <button className="pink-button export-button" onClick={exportVideo}>
+              ↓ ส่งออกวิดีโอ
+            </button>
+            <p className="footnote">♡ นี่เป็นการจำลองการส่งออกใน Prototype</p>
 
-            <div className="library-grid">
-              {videos
-                .filter((v) =>
-                  v.title.toLowerCase().includes(videoName.toLowerCase()) ||
-                  videoName === "โปรเจกต์ของฉัน"
-                )
-                .map((v) => (
-                  <div className="video-card" key={v.title}>
-                    <div className="thumbnail">
-                      <img src={v.image} alt={v.title} />
-                      <span>{v.time}</span>
+            {notice && <div className="notice">{notice}</div>}
+          </div>
+        )}
+
+        {/* LIBRARY PAGE */}
+        {page === "library" && (
+          <div className="screen">
+            <header className="page-header">
+              <b>โปรเจกต์ของฉัน</b>
+              <div>
+                <button className="icon-button" onClick={() => setNotice("ค้นหาวิดีโอ")}>⌕</button>
+                <button className="icon-button" onClick={() => setVideos([])}>♜</button>
+              </div>
+            </header>
+
+            <p className="subtitle">วิดีโอทั้งหมด {videos.length} รายการ</p>
+
+            {videos.length === 0 ? (
+              <div className="empty">
+                <span>🎬</span>
+                <b>ยังไม่มีวิดีโอ</b>
+                <small>เริ่มสร้างวิดีโอของคุณกันเลย</small>
+                <button className="pink-button" onClick={() => setVideos(initialVideos)}>
+                  เพิ่มตัวอย่างวิดีโอ
+                </button>
+              </div>
+            ) : (
+              <div className="library-grid">
+                {videos.map((video) => (
+                  <div className="video-card" key={video.id}>
+                    <button className="video-thumb" onClick={() => openEditor(video)}>
+                      <img src={video.image} alt={video.title} />
+                      <span>{video.duration}</span>
+                    </button>
+                    <div className="video-detail">
+                      <b>{video.title}</b>
+                      <small>{video.size}</small>
                     </div>
-                    <p>{v.title}</p>
-                    <small>วิดีโอ • บันทึกแล้ว</small>
+                    <button
+                      className="more"
+                      onClick={() => setVideos(videos.filter((v) => v.id !== video.id))}
+                    >
+                      ⋯
+                    </button>
                   </div>
                 ))}
-            </div>
+              </div>
+            )}
 
-            <button
-              className="pink create-btn"
-              style={{ marginTop: 25 }}
-              onClick={goEdit}
-            >
-              ＋ สร้างโปรเจกต์ใหม่
+            <button className="pink-button library-add" onClick={() => openEditor(initialVideos[0])}>
+              ＋ สร้างวิดีโอใหม่
             </button>
           </div>
+        )}
 
-          <nav className="bottom-nav">
-            <button className="nav-item" onClick={() => setPage("home")}>⌂<small>หน้าหลัก</small></button>
-            <button className="nav-item active" onClick={() => setPage("library")}>▣<small>โปรเจกต์</small></button>
-            <button className="nav-item" onClick={() => setPage("export")}>♛<small>พรีเมียม</small></button>
-            <button className="nav-item" onClick={() => alert("โปรไฟล์")}>♙<small>โปรไฟล์</small></button>
-          </nav>
-        </section>
+        {/* BOTTOM NAVIGATION */}
+        <nav className="bottom-nav">
+          {nav.map((item) => (
+            <button
+              key={item.id}
+              className={page === item.id ? "nav-active" : ""}
+              onClick={() => setPage(item.id)}
+            >
+              <span>{item.icon}</span>
+              <small>{item.label}</small>
+            </button>
+          ))}
+        </nav>
+        <div className="home-indicator" />
       </div>
 
-      <p style={{
-        textAlign: "center",
-        color: "#79536d",
-        fontSize: 12,
-        marginTop: 30
-      }}>
-        VideoEdit Prototype © 2026 | ออกแบบเพื่อทดลองใช้งาน
-      </p>
+      {notice && page !== "export" && (
+        <div className="toast" onClick={() => setNotice("")}>{notice} ✕</div>
+      )}
+
+      <style jsx global>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, "Noto Sans Thai", sans-serif; }
+        button { font: inherit; cursor: pointer; }
+        .app-bg {
+          min-height: 100vh;
+          background: radial-gradient(ellipse at top, #ffe6f2, #ffc6e0 55%, #f9b4d6);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px 10px;
+        }
+        .phone {
+          width: 100%;
+          max-width: 410px;
+          height: min(850px, calc(100dvh - 40px));
+          min-height: 600px;
+          background: #100e14;
+          border: 5px solid #29232e;
+          border-radius: 38px;
+          color: #fff;
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 20px 60px #a94e7c55, 0 0 0 2px #ffb3d7;
+        }
+        .status {
+          height: 33px;
+          min-height: 33px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 18px;
+          font-size: 11px;
+          font-weight: bold;
+          position: relative;
+        }
+        .island {
+          position: absolute;
+          width: 83px;
+          height: 22px;
+          background: #000;
+          border-radius: 20px;
+          left: 50%;
+          top: 3px;
+          transform: translateX(-50%);
+        }
+        .screen {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 13px 85px;
+          scrollbar-width: none;
+        }
+        .screen::-webkit-scrollbar { display: none; }
+        .header, .editor-header, .page-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          min-height: 38px;
+        }
+        .brand {
+          display: flex;
+          align-items: center;
+          font-size: 22px;
+          font-weight: 900;
+          gap: 9px;
+        }
+        .logo { color: #ff65ad; font-size: 28px; }
+        .icon-button {
+          border: none;
+          background: transparent;
+          color: white;
+          font-size: 22px;
+          padding: 5px 8px;
+        }
+        .subtitle { font-size: 11px; color: #c5bac6; margin: 2px 0 12px; }
+        .hero, .video-preview, .export-preview {
+          width: 100%;
+          position: relative;
+          background-size: cover;
+          background-position: center;
+          border-radius: 13px;
+          overflow: hidden;
+        }
+        .hero { height: 132px; background-color: #312433; }
+        .hero:after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(transparent, #0008);
+          pointer-events: none;
+        }
+        .hero .play, .video-preview .play {
+          position: absolute;
+          z-index: 2;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 43px;
+          height: 43px;
+          border: none;
+          border-radius: 50%;
+          background: #ffffffdf;
+          color: #17121b;
+          font-size: 18px;
+        }
+        .hero-caption {
+          position: absolute;
+          bottom: 10px;
+          left: 12px;
+          z-index: 2;
+          font-size: 12px;
+          font-weight: bold;
+        }
+        .pink-button {
+          width: 100%;
+          border: 0;
+          border-radius: 30px;
+          padding: 13px;
+          background: linear-gradient(100deg, #ff8ac3, #f22e91);
+          color: #1c1018;
+          font-weight: 900;
+          margin: 9px 0 17px;
+          box-shadow: 0 4px 15px #ed429055;
+        }
+        .pink-button:active { transform: scale(.98); }
+        .section-title {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 15px 0 9px;
+          font-size: 12px;
+          font-weight: bold;
+        }
+        .section-title span:last-child { color: #aaa; font-size: 10px; }
+        .tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+        .tool-card {
+          border: 1px solid #34303a;
+          background: #211e27;
+          border-radius: 9px;
+          padding: 10px 3px;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .tool-card span { font-size: 22px; color: #ff82bd; }
+        .tool-card small { font-size: 10px; }
+        .template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .template {
+          padding: 0;
+          border: none;
+          background: #25212a;
+          color: white;
+          overflow: hidden;
+          border-radius: 9px;
+          text-align: left;
+        }
+        .template img { width: 100%; height: 95px; object-fit: cover; display: block; }
+        .template span { display: block; padding: 6px; font-size: 10px; }
+        .tip, .export-info {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: #241d29;
+          border-radius: 10px;
+          padding: 11px;
+          margin-top: 15px;
+        }
+        .tip > span, .export-info > span { font-size: 22px; }
+        .tip div, .export-info div { display: flex; flex-direction: column; gap: 4px; }
+        .tip b, .export-info b { font-size: 11px; }
+        .tip small, .export-info small { color: #b8aebc; font-size: 10px; }
+        .bottom-nav {
+          position: absolute;
+          bottom: 13px;
+          left: 0;
+          width: 100%;
+          height: 56px;
+          background: #17141c;
+          border-top: 1px solid #302b35;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          z-index: 5;
+        }
+        .bottom-nav button {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          align-items: center;
+          color: #aaa1ae;
+          background: none;
+          border: 0;
+          min-width: 55px;
+        }
+        .bottom-nav button span { font-size: 21px; }
+        .bottom-nav button small { font-size: 9px; }
+        .bottom-nav .nav-active { color: #ff65ad; }
+        .home-indicator {
+          position: absolute;
+          z-index: 6;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 105px;
+          height: 4px;
+          border-radius: 10px;
+          background: white;
+        }
+        .editor-header { margin-bottom: 8px; }
+        .quality-tag, .export-small {
+          border: 0;
+          background: #28232e;
+          color: white;
+          padding: 7px 12px;
+          border-radius: 20px;
+          font-size: 10px;
+        }
+        .export-small {
+          background: #f45ba7;
+          color: #1c1018;
+          font-weight: bold;
+        }
+        .video-preview { height: 225px; background: #25202a; }
+        .video-preview img, .export-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .time-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 10px;
+          color: #ccc;
+          padding: 10px 0;
+        }
+        .preview-controls { display: flex; gap: 13px; }
+        .preview-controls button { background: none; color: white; border: 0; font-size: 16px; }
+        .timeline {
+          background: #1d1a23;
+          padding: 10px;
+          border-radius: 10px;
+          min-height: 190px;
+          position: relative;
+        }
+        .timeline-ruler {
+          display: flex;
+          justify-content: space-between;
+          padding-left: 45px;
+          color: #aaa;
+          font-size: 9px;
+          margin-bottom: 9px;
+        }
+        .timeline-track { display: flex; align-items: center; gap: 7px; position: relative; }
+        .track-icon { font-size: 17px; }
+        .track-content { display: flex; height: 48px; overflow: hidden; border-radius: 5px; flex: 1; }
+        .track-content img { width: 33.33%; height: 100%; object-fit: cover; border-right: 1px solid #222; }
+        .playhead {
+          position: absolute;
+          top: -13px;
+          left: 53px;
+          width: 2px;
+          height: 130px;
+          background: #ff66af;
+          pointer-events: none;
+        }
+        .audio-track {
+          margin: 14px 0 0 27px;
+          background: #33203d;
+          border-radius: 6px;
+          padding: 8px;
+          color: #e4a4ff;
+          font-size: 10px;
+        }
+        .wave { height: 23px; display: flex; gap: 3px; align-items: center; margin-top: 5px; }
+        .wave i { display: block; width: 3px; border-radius: 3px; background: #b85de5; }
+        .active-tool { margin: 14px 0 7px; color: #aaa; font-size: 10px; }
+        .active-tool b { color: #ff85bd; }
+        .editor-tools { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+        .editor-tools button {
+          border: 0;
+          background: transparent;
+          color: white;
+          padding: 9px 1px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 7px;
+          border-radius: 8px;
+        }
+        .editor-tools button span { font-size: 20px; }
+        .editor-tools button small { font-size: 9px; }
+        .editor-tools .selected-tool { background: #392438; color: #ff8ac3; }
+        .page-header { margin-bottom: 17px; }
+        .page-header b { font-size: 16px; }
+        .page-header > div { display: flex; }
+        .export-preview { height: 190px; margin-bottom: 18px; }
+        .play-mini {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          background: #ffffffdf;
+          color: #111;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          display: grid;
+          place-items: center;
+        }
+        .field-label { font-size: 11px; font-weight: bold; margin: 18px 0 8px; }
+        .option-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .option {
+          border: none;
+          background: #28242e;
+          color: white;
+          padding: 12px 5px;
+          border-radius: 8px;
+          font-size: 11px;
+        }
+        .option.active {
+          background: linear-gradient(100deg, #ff91c8, #ef3e99);
+          color: #20111b;
+          font-weight: bold;
+        }
+        .export-info { margin-top: 22px; }
+        .export-button { margin-top: 20px; }
+        .footnote { color: #888; font-size: 9px; text-align: center; }
+        .notice, .toast {
+          position: fixed;
+          z-index: 20;
+          bottom: 82px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: #ff83bd;
+          color: #24111c;
+          border-radius: 20px;
+          padding: 11px 16px;
+          font-size: 11px;
+          font-weight: bold;
+          width: max-content;
+          max-width: 85%;
+          text-align: center;
+        }
+        .library-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 10px; }
+        .video-card { position: relative; min-width: 0; }
+        .video-thumb {
+          position: relative;
+          width: 100%;
+          height: 125px;
+          padding: 0;
+          border: 0;
+          overflow: hidden;
+          border-radius: 9px;
+          background: #25202a;
+        }
+        .video-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .video-thumb span {
+          position: absolute;
+          bottom: 6px;
+          right: 6px;
+          background: #000b;
+          padding: 3px 5px;
+          font-size: 9px;
+          border-radius: 4px;
+        }
+        .video-detail { display: flex; flex-direction: column; gap: 4px; padding: 6px 3px; }
+        .video-detail b { font-size: 11px; }
+        .video-detail small { color: #aaa; font-size: 9px; }
+        .more {
+          position: absolute;
+          right: 1px;
+          bottom: 3px;
+          border: 0;
+          color: #ccc;
+          background: transparent;
+          font-size: 19px;
+        }
+        .library-add { margin-top: 22px; }
+        .empty {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          padding: 70px 10px;
+          color: #aaa;
+          font-size: 12px;
+        }
+        .empty span { font-size: 45px; }
+        .empty b { color: white; }
+        .empty .pink-button { margin-top: 12px; }
+        @media (max-width: 480px) {
+          .app-bg { padding: 0; background: #100e14; }
+          .phone {
+            max-width: none;
+            width: 100%;
+            height: 100dvh;
+            min-height: 560px;
+            border: none;
+            border-radius: 0;
+          }
+          .status { padding-top: env(safe-area-inset-top); }
+          .home-indicator { bottom: max(4px, env(safe-area-inset-bottom)); }
+          .bottom-nav { bottom: max(13px, env(safe-area-inset-bottom)); }
+        }
+      `}</style>
     </main>
+  );
+}
+
+function SectionTitle({ title, action }: { title: string; action: string }) {
+  return (
+    <div className="section-title">
+      <span>{title}</span>
+      <span>{action} ›</span>
+    </div>
   );
 }
