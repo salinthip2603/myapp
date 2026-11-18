@@ -1,797 +1,677 @@
+
 "use client";
 
 import { useState } from "react";
 
-type Video = {
-  id: number;
-  title: string;
-  image: string;
-  duration: string;
-  size: string;
-};
+type Screen = "home" | "seats" | "booking" | "success";
 
-const initialVideos: Video[] = [
+const busImage =
+  "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=1000&q=85";
+
+const destinations = [
   {
-    id: 1,
-    title: "ทริปท่องเที่ยว",
-    image: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=700",
-    duration: "00:30",
-    size: "12 MB",
+    name: "เชียงใหม่",
+    from: "กรุงเทพฯ",
+    image:
+      "https://images.unsplash.com/photo-1598935888738-cd2622bcd437?w=500&q=80",
+    price: 650,
   },
   {
-    id: 2,
-    title: "ดอกไม้สวยๆ",
-    image: "https://images.unsplash.com/photo-1494972308805-463bc619d34e?w=700",
-    duration: "00:15",
-    size: "25 MB",
+    name: "ขอนแก่น",
+    from: "กรุงเทพฯ",
+    image:
+      "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=500&q=80",
+    price: 480,
   },
   {
-    id: 3,
-    title: "วิวเมือง",
-    image: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=700",
-    duration: "00:45",
-    size: "18 MB",
-  },
-  {
-    id: 4,
-    title: "น้องแมว",
-    image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=700",
-    duration: "00:20",
-    size: "10 MB",
+    name: "ภูเก็ต",
+    from: "กรุงเทพฯ",
+    image:
+      "https://images.unsplash.com/photo-1530789253388-582c481c54b0?w=500&q=80",
+    price: 850,
   },
 ];
 
-const tools = [
-  { icon: "✂️", name: "ตัดต่อ" },
-  { icon: "◷", name: "ความเร็ว" },
-  { icon: "✨", name: "เอฟเฟกต์" },
-  { icon: "T", name: "ข้อความ" },
-  { icon: "♫", name: "เสียงเพลง" },
-  { icon: "◉", name: "ฟิลเตอร์" },
+const allSeats = [
+  "1A", "1B", "1C", "1D",
+  "2A", "2B", "2C", "2D",
+  "3A", "3B", "3C", "3D",
+  "4A", "4B", "4C", "4D",
+  "5A", "5B", "5C", "5D",
 ];
+
+const occupiedSeats = ["1C", "2D", "3D", "4A", "5C"];
 
 export default function Home() {
-  const [page, setPage] = useState("home");
-  const [videos, setVideos] = useState(initialVideos);
-  const [selected, setSelected] = useState<Video>(initialVideos[0]);
-  const [quality, setQuality] = useState("1080P");
-  const [fps, setFps] = useState("30");
-  const [format, setFormat] = useState("MP4");
-  const [playing, setPlaying] = useState(false);
-  const [activeTool, setActiveTool] = useState("ตัดต่อ");
-  const [notice, setNotice] = useState("");
+  const [screen, setScreen] = useState<Screen>("home");
+  const [from, setFrom] = useState("กรุงเทพฯ");
+  const [to, setTo] = useState("เชียงใหม่");
+  const [date, setDate] = useState("2026-11-25");
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([
+    "3A",
+    "3B",
+  ]);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [payment, setPayment] = useState("บัตรเครดิต / เดบิต");
+  const [bookingCode] = useState("BK2568001234");
+  const [activeTab, setActiveTab] = useState("หน้าแรก");
 
-  const openEditor = (video: Video) => {
-    setSelected(video);
-    setPage("editor");
-    setPlaying(false);
+  const price =
+    destinations.find((item) => item.name === to)?.price ?? 650;
+
+  const total = selectedSeats.length * price;
+
+  const toggleSeat = (seat: string) => {
+    if (occupiedSeats.includes(seat)) return;
+
+    setSelectedSeats((current) =>
+      current.includes(seat)
+        ? current.filter((item) => item !== seat)
+        : current.length < 5
+        ? [...current, seat]
+        : current
+    );
   };
 
-  const exportVideo = () => {
-    setNotice(`ส่งออกวิดีโอ ${selected.title} สำเร็จ! (${quality}, ${fps} FPS, ${format})`);
-    setVideos((old) => old.some((v) => v.id === selected.id) ? old : [selected, ...old]);
+  const searchTickets = () => {
+    if (from === to) {
+      alert("ต้นทางและปลายทางต้องไม่เหมือนกัน");
+      return;
+    }
+    setScreen("seats");
   };
 
-  const nav = [
-    { id: "home", icon: "⌂", label: "หน้าแรก" },
-    { id: "editor", icon: "▣", label: "โปรเจกต์" },
-    { id: "export", icon: "♛", label: "พรีเมียม" },
-    { id: "library", icon: "♟", label: "โปรไฟล์" },
-  ];
+  const goBooking = () => {
+    if (selectedSeats.length === 0) {
+      alert("กรุณาเลือกที่นั่งก่อน");
+      return;
+    }
+    setScreen("booking");
+  };
+
+  const confirmBooking = () => {
+    if (!name.trim() || !phone.trim()) {
+      alert("กรุณากรอกชื่อและเบอร์โทรศัพท์");
+      return;
+    }
+    if (phone.length < 9) {
+      alert("กรุณาตรวจสอบเบอร์โทรศัพท์");
+      return;
+    }
+    setScreen("success");
+  };
+
+  const resetApp = () => {
+    setScreen("home");
+    setSelectedSeats(["3A", "3B"]);
+    setName("");
+    setPhone("");
+    setActiveTab("หน้าแรก");
+  };
+
+  const formattedDate = new Date(
+    `${date}T00:00:00`
+  ).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const ScreenHeader = ({
+    title,
+    back,
+  }: {
+    title: string;
+    back: () => void;
+  }) => (
+    <div className="flex items-center justify-between px-5 py-4">
+      <button
+        onClick={back}
+        className="text-2xl text-white hover:text-pink-400"
+      >
+        ←
+      </button>
+      <h2 className="text-lg font-bold">{title}</h2>
+      <div className="w-6" />
+    </div>
+  );
+
+  const BottomNav = () => (
+    <div className="sticky bottom-0 z-20 grid grid-cols-4 border-t border-white/10 bg-[#17121c]/95 px-2 py-3 backdrop-blur-xl">
+      {[
+        ["⌂", "หน้าแรก"],
+        ["▤", "การจองของฉัน"],
+        ["♧", "ช่วยเหลือ"],
+        ["♙", "โปรไฟล์"],
+      ].map(([icon, label]) => (
+        <button
+          key={label}
+          onClick={() => {
+            setActiveTab(label);
+            if (label === "หน้าแรก") setScreen("home");
+            if (label === "การจองของฉัน") {
+              alert("ยังไม่มีรายการจองอื่นใน Prototype นี้");
+            }
+            if (label === "ช่วยเหลือ") {
+              alert("ติดต่อ Call Center: 02-000-0000");
+            }
+            if (label === "โปรไฟล์") {
+              alert("ระบบโปรไฟล์ยังไม่เปิดใช้งาน");
+            }
+          }}
+          className={`flex flex-col items-center gap-1 text-xs ${
+            activeTab === label ? "text-pink-400" : "text-gray-400"
+          }`}
+        >
+          <span className="text-2xl">{icon}</span>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <main className="app-bg">
-      <div className="phone">
+    <main className="min-h-screen bg-[#0b080e] px-3 py-6 text-white sm:px-6">
+      <div className="mx-auto max-w-[430px] overflow-hidden rounded-[35px] border border-pink-400/30 bg-[#17121c] shadow-[0_0_50px_rgba(236,72,153,0.16)]">
 
-        {/* STATUS BAR */}
-        <div className="status">
-          <span>9:41</span>
-          <span className="island" />
-          <span>▮ ▴ ▰</span>
-        </div>
+        {/* HOME SCREEN */}
+        {screen === "home" && (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-[#17121c]" />
 
-        {/* HOME PAGE */}
-        {page === "home" && (
-          <div className="screen">
-            <header className="header">
-              <div className="brand">
-                <span className="logo">▶</span>
-                <span>VideoEdit</span>
-              </div>
-              <button className="icon-button" onClick={() => setNotice("ตั้งค่าการใช้งาน")}>⚙</button>
-            </header>
+              <img
+                src={busImage}
+                alt="รถโดยสาร"
+                className="h-[245px] w-full object-cover"
+              />
 
-            <p className="subtitle">ตัดต่อวิดีโอ...ได้ง่ายๆ ในมือคุณ ♡</p>
-
-            <div className="hero" style={{ backgroundImage: `url(${selected.image})` }}>
-              <button className="play" onClick={() => openEditor(selected)}>▶</button>
-              <div className="hero-caption">Create your story ✨</div>
-            </div>
-
-            <button className="pink-button" onClick={() => openEditor(selected)}>
-              ＋ เริ่มสร้างวิดีโอ
-            </button>
-
-            <SectionTitle title="เครื่องมือตัดต่อยอดนิยม" action="ดูทั้งหมด" />
-
-            <div className="tool-grid">
-              {tools.slice(0, 4).map((tool) => (
-                <button
-                  key={tool.name}
-                  className="tool-card"
-                  onClick={() => {
-                    setActiveTool(tool.name);
-                    openEditor(selected);
-                  }}
-                >
-                  <span>{tool.icon}</span>
-                  <small>{tool.name}</small>
-                </button>
-              ))}
-            </div>
-
-            <SectionTitle title="เทมเพลตแนะนำ" action="ดูทั้งหมด" />
-
-            <div className="template-grid">
-              {videos.slice(0, 3).map((video) => (
-                <button
-                  className="template"
-                  key={video.id}
-                  onClick={() => openEditor(video)}
-                >
-                  <img src={video.image} alt={video.title} />
-                  <span>{video.title}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="tip">
-              <span>💗</span>
-              <div>
-                <b>สร้างวิดีโอในแบบของคุณ</b>
-                <small>เพิ่มสีสันให้ทุกช่วงเวลาพิเศษ</small>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* EDITOR PAGE */}
-        {page === "editor" && (
-          <div className="screen">
-            <header className="editor-header">
-              <button className="icon-button" onClick={() => setPage("home")}>✕</button>
-              <button className="quality-tag" onClick={() => setPage("export")}>
-                {quality}⌄
-              </button>
-              <button className="export-small" onClick={() => setPage("export")}>
-                ↑ ส่งออก
-              </button>
-            </header>
-
-            <div className="video-preview">
-              <img src={selected.image} alt={selected.title} />
-              <button className="play" onClick={() => setPlaying(!playing)}>
-                {playing ? "Ⅱ" : "▶"}
-              </button>
-            </div>
-
-            <div className="time-row">
-              <span>{playing ? "00:15" : "00:00"} / {selected.duration}</span>
-              <div className="preview-controls">
-                <button onClick={() => setPlaying(!playing)}>▶</button>
-                <button onClick={() => setNotice("ย้อนกลับแล้ว")}>↶</button>
-                <button onClick={() => setNotice("ทำซ้ำแล้ว")}>↷</button>
-                <button onClick={() => setNotice("แสดงตัวอย่างเต็มจอ")}>⛶</button>
-              </div>
-            </div>
-
-            <div className="timeline">
-              <div className="timeline-ruler">
-                <span>00:00</span>
-                <span>00:05</span>
-                <span>00:10</span>
-              </div>
-              <div className="timeline-track">
-                <div className="track-icon">🔊</div>
-                <div className="track-content">
-                  <img src={selected.image} alt="" />
-                  <img src={selected.image} alt="" />
-                  <img src={selected.image} alt="" />
-                </div>
-                <div className="playhead" />
-              </div>
-              <div className="audio-track">
-                <span>♫ เพลงประกอบ</span>
-                <div className="wave">
-                  {Array.from({ length: 35 }).map((_, i) => (
-                    <i key={i} style={{ height: `${8 + ((i * 13) % 25)}px` }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="active-tool">
-              กำลังใช้งาน: <b>{activeTool}</b>
-            </div>
-
-            <div className="editor-tools">
-              {tools.map((tool) => (
-                <button
-                  key={tool.name}
-                  className={activeTool === tool.name ? "selected-tool" : ""}
-                  onClick={() => {
-                    setActiveTool(tool.name);
-                    setNotice(`เลือกเครื่องมือ ${tool.name} แล้ว`);
-                  }}
-                >
-                  <span>{tool.icon}</span>
-                  <small>{tool.name}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* EXPORT PAGE */}
-        {page === "export" && (
-          <div className="screen">
-            <header className="page-header">
-              <button className="icon-button" onClick={() => setPage("editor")}>‹</button>
-              <b>ส่งออกวิดีโอ</b>
-              <span />
-            </header>
-
-            <div className="export-preview">
-              <img src={selected.image} alt={selected.title} />
-              <span className="play-mini">▶</span>
-            </div>
-
-            <p className="field-label">ความละเอียด</p>
-            <div className="option-row">
-              {["480P", "720P", "1080P"].map((item) => (
-                <button
-                  key={item}
-                  className={quality === item ? "option active" : "option"}
-                  onClick={() => setQuality(item)}
-                >
-                  {item} {quality === item ? "✓" : ""}
-                </button>
-              ))}
-            </div>
-
-            <p className="field-label">อัตราเฟรม (FPS)</p>
-            <div className="option-row">
-              {["24", "30", "60"].map((item) => (
-                <button
-                  key={item}
-                  className={fps === item ? "option active" : "option"}
-                  onClick={() => setFps(item)}
-                >
-                  {item} {fps === item ? "✓" : ""}
-                </button>
-              ))}
-            </div>
-
-            <p className="field-label">รูปแบบไฟล์</p>
-            <div className="option-row">
-              {["MP4", "MOV"].map((item) => (
-                <button
-                  key={item}
-                  className={format === item ? "option active" : "option"}
-                  onClick={() => setFormat(item)}
-                >
-                  {item} {format === item ? "✓" : ""}
-                </button>
-              ))}
-            </div>
-
-            <div className="export-info">
-              <span>📁</span>
-              <div>
-                <b>ตั้งค่าการส่งออก</b>
-                <small>{quality} · {fps} FPS · {format}</small>
-              </div>
-            </div>
-
-            <button className="pink-button export-button" onClick={exportVideo}>
-              ↓ ส่งออกวิดีโอ
-            </button>
-            <p className="footnote">♡ นี่เป็นการจำลองการส่งออกใน Prototype</p>
-
-            {notice && <div className="notice">{notice}</div>}
-          </div>
-        )}
-
-        {/* LIBRARY PAGE */}
-        {page === "library" && (
-          <div className="screen">
-            <header className="page-header">
-              <b>โปรเจกต์ของฉัน</b>
-              <div>
-                <button className="icon-button" onClick={() => setNotice("ค้นหาวิดีโอ")}>⌕</button>
-                <button className="icon-button" onClick={() => setVideos([])}>♜</button>
-              </div>
-            </header>
-
-            <p className="subtitle">วิดีโอทั้งหมด {videos.length} รายการ</p>
-
-            {videos.length === 0 ? (
-              <div className="empty">
-                <span>🎬</span>
-                <b>ยังไม่มีวิดีโอ</b>
-                <small>เริ่มสร้างวิดีโอของคุณกันเลย</small>
-                <button className="pink-button" onClick={() => setVideos(initialVideos)}>
-                  เพิ่มตัวอย่างวิดีโอ
-                </button>
-              </div>
-            ) : (
-              <div className="library-grid">
-                {videos.map((video) => (
-                  <div className="video-card" key={video.id}>
-                    <button className="video-thumb" onClick={() => openEditor(video)}>
-                      <img src={video.image} alt={video.title} />
-                      <span>{video.duration}</span>
-                    </button>
-                    <div className="video-detail">
-                      <b>{video.title}</b>
-                      <small>{video.size}</small>
-                    </div>
-                    <button
-                      className="more"
-                      onClick={() => setVideos(videos.filter((v) => v.id !== video.id))}
-                    >
-                      ⋯
-                    </button>
+              <div className="absolute left-5 right-5 top-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl text-pink-400">▣</span>
+                  <div>
+                    <h1 className="text-3xl font-black">
+                      Bus<span className="text-pink-400">Go</span>
+                    </h1>
+                    <p className="text-xs text-gray-200">
+                      เดินทางสะดวก ทุกเส้นทาง
+                    </p>
                   </div>
+                </div>
+                <button
+                  onClick={() => alert("ไม่มีการแจ้งเตือนใหม่")}
+                  className="text-2xl"
+                >
+                  ♧
+                </button>
+              </div>
+
+              <div className="absolute bottom-5 left-5">
+                <h2 className="text-2xl font-black leading-tight">
+                  ออกเดินทาง
+                  <br />
+                  ไปกับ BusGo ♡
+                </h2>
+                <p className="mt-2 text-sm text-pink-300">
+                  ค้นหาการเดินทางของคุณ
+                </p>
+              </div>
+            </div>
+
+            <div className="px-4 pb-5">
+              <div className="mb-4 grid grid-cols-2 rounded-xl bg-[#29232f] p-1">
+                <button className="rounded-lg bg-gradient-to-r from-pink-500 to-pink-400 py-3 font-bold text-black">
+                  ▣ จองตั๋วรถ
+                </button>
+                <button
+                  onClick={() =>
+                    alert("กรุณาเข้าสู่ระบบเพื่อเช็กสถานะ")
+                  }
+                  className="rounded-lg py-3 text-sm text-gray-300"
+                >
+                  ▤ เช็กสถานะ
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-white/10 bg-[#29232f] p-3">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    📍 ต้นทาง
+                  </label>
+                  <select
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                    className="w-full bg-transparent font-semibold outline-none"
+                  >
+                    {["กรุงเทพฯ", "เชียงใหม่", "ขอนแก่น", "ภูเก็ต"].map(
+                      (city) => (
+                        <option key={city} value={city} className="bg-[#29232f]">
+                          {city}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#29232f] p-3">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    📍 ปลายทาง
+                  </label>
+                  <select
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    className="w-full bg-transparent font-semibold outline-none"
+                  >
+                    {["เชียงใหม่", "ขอนแก่น", "ภูเก็ต", "กรุงเทพฯ"].map(
+                      (city) => (
+                        <option key={city} value={city} className="bg-[#29232f]">
+                          {city}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#29232f] p-3">
+                  <label className="mb-1 block text-xs text-gray-400">
+                    📅 วันเดินทาง
+                  </label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full bg-transparent font-semibold text-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={searchTickets}
+                className="mt-4 w-full rounded-full bg-gradient-to-r from-pink-500 to-pink-300 py-4 font-black text-black shadow-lg shadow-pink-500/20 transition hover:brightness-110 active:scale-95"
+              >
+                🔍 ค้นหาตั๋ว
+              </button>
+
+              <div className="mb-3 mt-6 flex items-center justify-between">
+                <h3 className="font-bold">เส้นทางยอดนิยม</h3>
+                <button
+                  onClick={() => alert("แสดงเส้นทางทั้งหมด")}
+                  className="text-xs text-pink-400"
+                >
+                  ดูทั้งหมด ›
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {destinations.map((item) => (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setFrom("กรุงเทพฯ");
+                      setTo(item.name);
+                    }}
+                    className="overflow-hidden rounded-xl border border-white/10 bg-[#29232f] text-left"
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-20 w-full object-cover"
+                    />
+                    <div className="p-2">
+                      <p className="text-xs font-bold">{item.from}</p>
+                      <p className="text-xs text-pink-300">
+                        → {item.name}
+                      </p>
+                      <p className="mt-1 text-[10px] text-gray-400">
+                        เริ่ม ฿{item.price}
+                      </p>
+                    </div>
+                  </button>
                 ))}
               </div>
-            )}
-
-            <button className="pink-button library-add" onClick={() => openEditor(initialVideos[0])}>
-              ＋ สร้างวิดีโอใหม่
-            </button>
-          </div>
+            </div>
+            <BottomNav />
+          </>
         )}
 
-        {/* BOTTOM NAVIGATION */}
-        <nav className="bottom-nav">
-          {nav.map((item) => (
-            <button
-              key={item.id}
-              className={page === item.id ? "nav-active" : ""}
-              onClick={() => setPage(item.id)}
-            >
-              <span>{item.icon}</span>
-              <small>{item.label}</small>
-            </button>
-          ))}
-        </nav>
-        <div className="home-indicator" />
+        {/* SEAT SCREEN */}
+        {screen === "seats" && (
+          <>
+            <ScreenHeader
+              title="เลือกที่นั่ง"
+              back={() => setScreen("home")}
+            />
+
+            <div className="px-4 pb-5">
+              <div className="flex gap-3 rounded-2xl border border-white/10 bg-[#29232f] p-3">
+                <img
+                  src={busImage}
+                  alt="รถโดยสาร"
+                  className="h-20 w-24 rounded-xl object-cover"
+                />
+                <div className="flex-1">
+                  <h3 className="font-bold">
+                    {from} → {to}
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    วันเดินทาง {formattedDate}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    20:00 น. | รถ VIP 32 ที่นั่ง
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-pink-400">
+                    ฿{price} / ที่นั่ง
+                  </p>
+                </div>
+              </div>
+
+              <div className="my-5 flex flex-wrap justify-center gap-4 text-xs">
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded bg-white" />
+                  ที่นั่งว่าง
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded bg-pink-500" />
+                  ที่นั่งที่เลือก
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 rounded bg-gray-600" />
+                  ถูกจองแล้ว
+                </span>
+              </div>
+
+              <div className="rounded-[35px] border-4 border-gray-500/60 bg-gradient-to-b from-[#4b4552] to-[#211c27] p-4 shadow-inner">
+                <div className="mb-5 rounded-2xl border border-gray-500 bg-[#17121c] py-3 text-center text-sm font-bold text-pink-300">
+                  🚘 ด้านหน้ารถ / คนขับ
+                </div>
+
+                <div className="grid grid-cols-[1fr_1fr_0.45fr_1fr_1fr] gap-2">
+                  {allSeats.map((seat, index) => {
+                    const occupied = occupiedSeats.includes(seat);
+                    const selected = selectedSeats.includes(seat);
+
+                    return (
+                      <div key={seat} className="contents">
+                        {index % 4 === 0 && (
+                          <div className="hidden" />
+                        )}
+                        <button
+                          onClick={() => toggleSeat(seat)}
+                          disabled={occupied}
+                          className={`aspect-square rounded-xl text-sm font-black transition active:scale-90 ${
+                            occupied
+                              ? "cursor-not-allowed bg-gray-600 text-gray-400"
+                              : selected
+                              ? "bg-gradient-to-br from-pink-400 to-pink-600 text-black shadow-lg shadow-pink-500/30"
+                              : "bg-gray-100 text-gray-900 hover:bg-pink-200"
+                          }`}
+                        >
+                          {seat}
+                        </button>
+                        {index % 4 === 1 && (
+                          <div className="flex items-center justify-center text-[10px] text-gray-500">
+                            |
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 rounded-xl border border-gray-600 bg-[#17121c] py-2 text-center text-xs text-gray-400">
+                  🚪 ทางออกฉุกเฉิน
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-pink-400/20 bg-[#29232f] p-4">
+                <div className="flex justify-between">
+                  <div>
+                    <p className="font-bold">ที่นั่งที่เลือก</p>
+                    <p className="mt-1 text-sm text-pink-300">
+                      {selectedSeats.length
+                        ? selectedSeats.join(", ")
+                        : "ยังไม่ได้เลือกที่นั่ง"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">รวมทั้งหมด</p>
+                    <p className="text-xl font-black text-pink-400">
+                      ฿{total.toLocaleString("th-TH")}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={goBooking}
+                  className="mt-4 w-full rounded-full bg-gradient-to-r from-pink-500 to-pink-300 py-4 font-black text-black"
+                >
+                  ดำเนินการต่อ →
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* BOOKING SCREEN */}
+        {screen === "booking" && (
+          <>
+            <ScreenHeader
+              title="สรุปรายการจอง"
+              back={() => setScreen("seats")}
+            />
+
+            <div className="space-y-4 px-4 pb-6">
+              <div className="flex gap-3 rounded-2xl border border-white/10 bg-[#29232f] p-3">
+                <img
+                  src={busImage}
+                  alt="รถโดยสาร"
+                  className="h-20 w-24 rounded-xl object-cover"
+                />
+                <div>
+                  <h3 className="font-bold">
+                    {from} → {to}
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    วันที่ {formattedDate}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    เวลา 20:00 น. | VIP
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[#29232f] p-4">
+                <h3 className="mb-3 font-bold">รายละเอียดการจอง</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">ที่นั่ง</span>
+                    <span>{selectedSeats.join(", ")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">จำนวน</span>
+                    <span>{selectedSeats.length} ที่นั่ง</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">ราคา / ที่นั่ง</span>
+                    <span>฿{price.toLocaleString("th-TH")}</span>
+                  </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <div className="flex justify-between font-bold">
+                      <span>ยอดรวมทั้งหมด</span>
+                      <span className="text-xl text-pink-400">
+                        ฿{total.toLocaleString("th-TH")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[#29232f] p-4">
+                <h3 className="mb-4 font-bold">ข้อมูลผู้โดยสาร</h3>
+                <label className="mb-2 block text-xs text-gray-400">
+                  ชื่อ - นามสกุล
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="กรอกชื่อ-นามสกุล"
+                  className="mb-4 w-full rounded-xl border border-white/10 bg-[#17121c] p-3 text-sm outline-none focus:border-pink-400"
+                />
+
+                <label className="mb-2 block text-xs text-gray-400">
+                  เบอร์โทรศัพท์
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                  }
+                  placeholder="กรอกเบอร์โทรศัพท์"
+                  className="w-full rounded-xl border border-white/10 bg-[#17121c] p-3 text-sm outline-none focus:border-pink-400"
+                />
+              </div>
+
+              <div className="rounded-2xl bg-[#29232f] p-4">
+                <h3 className="mb-3 font-bold">ช่องทางการชำระเงิน</h3>
+                {[
+                  ["บัตรเครดิต / เดบิต", "💳"],
+                  ["พร้อมเพย์", "▣"],
+                  ["โอนผ่านธนาคาร", "🏦"],
+                ].map(([label, icon]) => (
+                  <button
+                    key={label}
+                    onClick={() => setPayment(label)}
+                    className={`mb-2 flex w-full items-center gap-3 rounded-xl border p-3 text-left text-sm ${
+                      payment === label
+                        ? "border-pink-400 bg-pink-500/10"
+                        : "border-white/10 bg-[#17121c]"
+                    }`}
+                  >
+                    <span className="text-xl">{icon}</span>
+                    <span className="flex-1">{label}</span>
+                    <span
+                      className={`h-4 w-4 rounded-full border ${
+                        payment === label
+                          ? "border-pink-400 bg-pink-400"
+                          : "border-gray-500"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={confirmBooking}
+                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-pink-300 py-4 font-black text-black shadow-lg shadow-pink-500/20"
+              >
+                💳 ยืนยันการจอง
+              </button>
+              <p className="text-center text-xs text-gray-500">
+                * Prototype สำหรับทดลองใช้งาน ยังไม่มีการตัดเงินจริง
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* SUCCESS SCREEN */}
+        {screen === "success" && (
+          <div className="flex min-h-[780px] flex-col items-center justify-between px-5 py-10 text-center">
+            <div className="w-full">
+              <div className="relative mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-pink-300 to-pink-600 text-6xl font-black text-white shadow-[0_0_50px_rgba(236,72,153,0.5)]">
+                ✓
+              </div>
+
+              <h1 className="text-3xl font-black">
+                จองตั๋วสำเร็จ!
+              </h1>
+              <p className="mt-2 text-sm text-gray-400">
+                ขอบคุณที่เลือกเดินทางกับ BusGo
+              </p>
+
+              <div className="mt-8 rounded-2xl border border-pink-400/30 bg-gradient-to-r from-pink-600/80 to-pink-400/80 p-4">
+                <p className="text-sm text-white/80">
+                  หมายเลขการจอง
+                </p>
+                <div className="mt-2 flex items-center justify-center gap-3">
+                  <p className="text-xl font-black tracking-wider">
+                    {bookingCode}
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(bookingCode);
+                      alert("คัดลอกหมายเลขการจองแล้ว");
+                    }}
+                    className="text-xl"
+                  >
+                    ▢
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-[#29232f] p-4 text-left text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">เส้นทาง</span>
+                  <span>{from} → {to}</span>
+                </div>
+                <div className="mt-3 flex justify-between">
+                  <span className="text-gray-400">วันเดินทาง</span>
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="mt-3 flex justify-between">
+                  <span className="text-gray-400">ที่นั่ง</span>
+                  <span>{selectedSeats.join(", ")}</span>
+                </div>
+                <div className="mt-3 flex justify-between">
+                  <span className="text-gray-400">ยอดรวม</span>
+                  <span className="font-bold text-pink-400">
+                    ฿{total.toLocaleString("th-TH")}
+                  </span>
+                </div>
+                <div className="mt-3 flex justify-between">
+                  <span className="text-gray-400">ช่องทางชำระเงิน</span>
+                  <span>{payment}</span>
+                </div>
+              </div>
+
+              <p className="mt-5 text-sm leading-relaxed text-gray-400">
+                กรุณาเก็บหมายเลขการจองไว้
+                <br />
+                เพื่อใช้ในการตรวจสอบสถานะการเดินทาง
+              </p>
+            </div>
+
+            <div className="w-full">
+              <button
+                onClick={() =>
+                  alert(
+                    `รายละเอียดการจอง\nหมายเลข: ${bookingCode}\nผู้โดยสาร: ${name}\nเบอร์โทร: ${phone}`
+                  )
+                }
+                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-pink-300 py-4 font-black text-black"
+              >
+                ▣ ดูรายละเอียดการจอง
+              </button>
+              <button
+                onClick={resetApp}
+                className="mt-3 w-full rounded-full border border-pink-400 py-4 font-bold text-pink-300"
+              >
+                ⌂ กลับหน้าหลัก
+              </button>
+            </div>
+
+            <img
+              src={busImage}
+              alt="รถโดยสาร BusGo"
+              className="mt-8 h-40 w-full rounded-2xl object-cover"
+            />
+          </div>
+        )}
       </div>
 
-      {notice && page !== "export" && (
-        <div className="toast" onClick={() => setNotice("")}>{notice} ✕</div>
-      )}
-
-      <style jsx global>{`
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, "Noto Sans Thai", sans-serif; }
-        button { font: inherit; cursor: pointer; }
-        .app-bg {
-          min-height: 100vh;
-          background: radial-gradient(ellipse at top, #ffe6f2, #ffc6e0 55%, #f9b4d6);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          padding: 20px 10px;
-        }
-        .phone {
-          width: 100%;
-          max-width: 410px;
-          height: min(850px, calc(100dvh - 40px));
-          min-height: 600px;
-          background: #100e14;
-          border: 5px solid #29232e;
-          border-radius: 38px;
-          color: #fff;
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 0 20px 60px #a94e7c55, 0 0 0 2px #ffb3d7;
-        }
-        .status {
-          height: 33px;
-          min-height: 33px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 18px;
-          font-size: 11px;
-          font-weight: bold;
-          position: relative;
-        }
-        .island {
-          position: absolute;
-          width: 83px;
-          height: 22px;
-          background: #000;
-          border-radius: 20px;
-          left: 50%;
-          top: 3px;
-          transform: translateX(-50%);
-        }
-        .screen {
-          flex: 1;
-          overflow-y: auto;
-          padding: 8px 13px 85px;
-          scrollbar-width: none;
-        }
-        .screen::-webkit-scrollbar { display: none; }
-        .header, .editor-header, .page-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          min-height: 38px;
-        }
-        .brand {
-          display: flex;
-          align-items: center;
-          font-size: 22px;
-          font-weight: 900;
-          gap: 9px;
-        }
-        .logo { color: #ff65ad; font-size: 28px; }
-        .icon-button {
-          border: none;
-          background: transparent;
-          color: white;
-          font-size: 22px;
-          padding: 5px 8px;
-        }
-        .subtitle { font-size: 11px; color: #c5bac6; margin: 2px 0 12px; }
-        .hero, .video-preview, .export-preview {
-          width: 100%;
-          position: relative;
-          background-size: cover;
-          background-position: center;
-          border-radius: 13px;
-          overflow: hidden;
-        }
-        .hero { height: 132px; background-color: #312433; }
-        .hero:after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(transparent, #0008);
-          pointer-events: none;
-        }
-        .hero .play, .video-preview .play {
-          position: absolute;
-          z-index: 2;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          width: 43px;
-          height: 43px;
-          border: none;
-          border-radius: 50%;
-          background: #ffffffdf;
-          color: #17121b;
-          font-size: 18px;
-        }
-        .hero-caption {
-          position: absolute;
-          bottom: 10px;
-          left: 12px;
-          z-index: 2;
-          font-size: 12px;
-          font-weight: bold;
-        }
-        .pink-button {
-          width: 100%;
-          border: 0;
-          border-radius: 30px;
-          padding: 13px;
-          background: linear-gradient(100deg, #ff8ac3, #f22e91);
-          color: #1c1018;
-          font-weight: 900;
-          margin: 9px 0 17px;
-          box-shadow: 0 4px 15px #ed429055;
-        }
-        .pink-button:active { transform: scale(.98); }
-        .section-title {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin: 15px 0 9px;
-          font-size: 12px;
-          font-weight: bold;
-        }
-        .section-title span:last-child { color: #aaa; font-size: 10px; }
-        .tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
-        .tool-card {
-          border: 1px solid #34303a;
-          background: #211e27;
-          border-radius: 9px;
-          padding: 10px 3px;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-        }
-        .tool-card span { font-size: 22px; color: #ff82bd; }
-        .tool-card small { font-size: 10px; }
-        .template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .template {
-          padding: 0;
-          border: none;
-          background: #25212a;
-          color: white;
-          overflow: hidden;
-          border-radius: 9px;
-          text-align: left;
-        }
-        .template img { width: 100%; height: 95px; object-fit: cover; display: block; }
-        .template span { display: block; padding: 6px; font-size: 10px; }
-        .tip, .export-info {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          background: #241d29;
-          border-radius: 10px;
-          padding: 11px;
-          margin-top: 15px;
-        }
-        .tip > span, .export-info > span { font-size: 22px; }
-        .tip div, .export-info div { display: flex; flex-direction: column; gap: 4px; }
-        .tip b, .export-info b { font-size: 11px; }
-        .tip small, .export-info small { color: #b8aebc; font-size: 10px; }
-        .bottom-nav {
-          position: absolute;
-          bottom: 13px;
-          left: 0;
-          width: 100%;
-          height: 56px;
-          background: #17141c;
-          border-top: 1px solid #302b35;
-          display: flex;
-          justify-content: space-around;
-          align-items: center;
-          z-index: 5;
-        }
-        .bottom-nav button {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          align-items: center;
-          color: #aaa1ae;
-          background: none;
-          border: 0;
-          min-width: 55px;
-        }
-        .bottom-nav button span { font-size: 21px; }
-        .bottom-nav button small { font-size: 9px; }
-        .bottom-nav .nav-active { color: #ff65ad; }
-        .home-indicator {
-          position: absolute;
-          z-index: 6;
-          bottom: 4px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 105px;
-          height: 4px;
-          border-radius: 10px;
-          background: white;
-        }
-        .editor-header { margin-bottom: 8px; }
-        .quality-tag, .export-small {
-          border: 0;
-          background: #28232e;
-          color: white;
-          padding: 7px 12px;
-          border-radius: 20px;
-          font-size: 10px;
-        }
-        .export-small {
-          background: #f45ba7;
-          color: #1c1018;
-          font-weight: bold;
-        }
-        .video-preview { height: 225px; background: #25202a; }
-        .video-preview img, .export-preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .time-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 10px;
-          color: #ccc;
-          padding: 10px 0;
-        }
-        .preview-controls { display: flex; gap: 13px; }
-        .preview-controls button { background: none; color: white; border: 0; font-size: 16px; }
-        .timeline {
-          background: #1d1a23;
-          padding: 10px;
-          border-radius: 10px;
-          min-height: 190px;
-          position: relative;
-        }
-        .timeline-ruler {
-          display: flex;
-          justify-content: space-between;
-          padding-left: 45px;
-          color: #aaa;
-          font-size: 9px;
-          margin-bottom: 9px;
-        }
-        .timeline-track { display: flex; align-items: center; gap: 7px; position: relative; }
-        .track-icon { font-size: 17px; }
-        .track-content { display: flex; height: 48px; overflow: hidden; border-radius: 5px; flex: 1; }
-        .track-content img { width: 33.33%; height: 100%; object-fit: cover; border-right: 1px solid #222; }
-        .playhead {
-          position: absolute;
-          top: -13px;
-          left: 53px;
-          width: 2px;
-          height: 130px;
-          background: #ff66af;
-          pointer-events: none;
-        }
-        .audio-track {
-          margin: 14px 0 0 27px;
-          background: #33203d;
-          border-radius: 6px;
-          padding: 8px;
-          color: #e4a4ff;
-          font-size: 10px;
-        }
-        .wave { height: 23px; display: flex; gap: 3px; align-items: center; margin-top: 5px; }
-        .wave i { display: block; width: 3px; border-radius: 3px; background: #b85de5; }
-        .active-tool { margin: 14px 0 7px; color: #aaa; font-size: 10px; }
-        .active-tool b { color: #ff85bd; }
-        .editor-tools { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
-        .editor-tools button {
-          border: 0;
-          background: transparent;
-          color: white;
-          padding: 9px 1px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 7px;
-          border-radius: 8px;
-        }
-        .editor-tools button span { font-size: 20px; }
-        .editor-tools button small { font-size: 9px; }
-        .editor-tools .selected-tool { background: #392438; color: #ff8ac3; }
-        .page-header { margin-bottom: 17px; }
-        .page-header b { font-size: 16px; }
-        .page-header > div { display: flex; }
-        .export-preview { height: 190px; margin-bottom: 18px; }
-        .play-mini {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          background: #ffffffdf;
-          color: #111;
-          border-radius: 50%;
-          width: 40px;
-          height: 40px;
-          display: grid;
-          place-items: center;
-        }
-        .field-label { font-size: 11px; font-weight: bold; margin: 18px 0 8px; }
-        .option-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .option {
-          border: none;
-          background: #28242e;
-          color: white;
-          padding: 12px 5px;
-          border-radius: 8px;
-          font-size: 11px;
-        }
-        .option.active {
-          background: linear-gradient(100deg, #ff91c8, #ef3e99);
-          color: #20111b;
-          font-weight: bold;
-        }
-        .export-info { margin-top: 22px; }
-        .export-button { margin-top: 20px; }
-        .footnote { color: #888; font-size: 9px; text-align: center; }
-        .notice, .toast {
-          position: fixed;
-          z-index: 20;
-          bottom: 82px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #ff83bd;
-          color: #24111c;
-          border-radius: 20px;
-          padding: 11px 16px;
-          font-size: 11px;
-          font-weight: bold;
-          width: max-content;
-          max-width: 85%;
-          text-align: center;
-        }
-        .library-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 10px; }
-        .video-card { position: relative; min-width: 0; }
-        .video-thumb {
-          position: relative;
-          width: 100%;
-          height: 125px;
-          padding: 0;
-          border: 0;
-          overflow: hidden;
-          border-radius: 9px;
-          background: #25202a;
-        }
-        .video-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .video-thumb span {
-          position: absolute;
-          bottom: 6px;
-          right: 6px;
-          background: #000b;
-          padding: 3px 5px;
-          font-size: 9px;
-          border-radius: 4px;
-        }
-        .video-detail { display: flex; flex-direction: column; gap: 4px; padding: 6px 3px; }
-        .video-detail b { font-size: 11px; }
-        .video-detail small { color: #aaa; font-size: 9px; }
-        .more {
-          position: absolute;
-          right: 1px;
-          bottom: 3px;
-          border: 0;
-          color: #ccc;
-          background: transparent;
-          font-size: 19px;
-        }
-        .library-add { margin-top: 22px; }
-        .empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-          padding: 70px 10px;
-          color: #aaa;
-          font-size: 12px;
-        }
-        .empty span { font-size: 45px; }
-        .empty b { color: white; }
-        .empty .pink-button { margin-top: 12px; }
-        @media (max-width: 480px) {
-          .app-bg { padding: 0; background: #100e14; }
-          .phone {
-            max-width: none;
-            width: 100%;
-            height: 100dvh;
-            min-height: 560px;
-            border: none;
-            border-radius: 0;
-          }
-          .status { padding-top: env(safe-area-inset-top); }
-          .home-indicator { bottom: max(4px, env(safe-area-inset-bottom)); }
-          .bottom-nav { bottom: max(13px, env(safe-area-inset-bottom)); }
-        }
-      `}</style>
+      <p className="mt-5 text-center text-xs text-gray-500">
+        BusGo • Bus Ticket Booking Prototype
+      </p>
     </main>
-  );
-}
-
-function SectionTitle({ title, action }: { title: string; action: string }) {
-  return (
-    <div className="section-title">
-      <span>{title}</span>
-      <span>{action} ›</span>
-    </div>
   );
 }
